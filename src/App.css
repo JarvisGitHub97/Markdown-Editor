@@ -3,3 +3,18 @@
   border: none;
   color: inherit;
 }
+.c-link {
+  cursor: pointer;
+}
+.left-panel {
+  min-height: 100vh;
+  position: relative;
+}
+.button-group {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}
+.no-border {
+  border-radius: 0 !important;
+}

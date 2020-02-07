@@ -12,9 +12,13 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const escPressed = useKeyPress(27)
   let node = useRef(null)
 
-  const closeEdit = () => {
+  const closeEdit = (editItem) => {
     setEditStatus(false)
     setValue('')
+    //如果关闭的是新创建的file，需要删除这个元素
+    if (editItem.isNew) {
+      onFileDelete(editItem.id)
+    }
   }
   useEffect(() => {
     // const handleInputEvent = (event) => {
@@ -32,21 +36,31 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     // return () => {
     //   document.removeEventListener('keyup', handleInputEvent)
     // }
-    if (enterPressed && editStatus) {
-        const editItem = files.find(file => file.id === editStatus)
+    const editItem = files.find(file => file.id === editStatus)
+    if (enterPressed && editStatus && value.trim() !== '') {
         onSaveEdit(editItem.id, value)
         setEditStatus(false)
         setValue('')
     }
     if (escPressed && editStatus) {
-      closeEdit()
+      closeEdit(editItem)
     }
   })
+  //editAutofocus
   useEffect(() => {
     if (editStatus) {
       node.current.focus()
     }
   }, [editStatus])
+  //新建文件改变编辑状态和值
+  useEffect(() => {
+    const newFile = files.find(file => file.isNew)
+    if (newFile) {
+      setEditStatus(newFile.id)
+      setValue(newFile.title)
+    } 
+  }, [files])
+  
   return (
     <ul className="list-group list-group-flush file-list">
       {
@@ -56,7 +70,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
             key={file.id}
           >
             {
-              file.id !== editStatus && 
+              ((file.id !== editStatus) && !file.isNew) && 
               <>
                 <span className="col-2">
                   <FontAwesomeIcon 
@@ -71,7 +85,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                 <button
                   type="button"
                   className="icon-button col-2" 
-                  onClick={() => { setEditStatus(file.id); setValue(file.title) }}
+                  onClick={() => { setEditStatus(file.id); setValue(file.title)}}
                 >
                   <FontAwesomeIcon 
                     icon={faEdit} 
@@ -93,18 +107,19 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
               </>
             }
             {
-              file.id === editStatus && 
+              ((file.id === editStatus) || file.isNew) && 
               <>
                 <input
                   className="form-control col-10"
                   value={value}
                   onChange={(e) => {setValue(e.target.value)}}
                   ref={node}
+                  placeholder="请输入文件名称"
                 />
                 <button
                   type="button"
                   className="icon-button col-2" 
-                  onClick={ closeEdit }
+                  onClick={ () => {closeEdit(file)}}
                 >
                   <FontAwesomeIcon 
                     icon={faTimes} 

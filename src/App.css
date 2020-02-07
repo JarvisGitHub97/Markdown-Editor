@@ -18,3 +18,10 @@
 .no-border {
   border-radius: 0 !important;
 }
+.start-page {
+  font-size: 30px;
+  color: #ccc;
+  height: 450px;
+  line-height: 450px;
+  text-align: center;
+}

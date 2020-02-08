@@ -1,8 +1,9 @@
 import React, { useState }from 'react';
-import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons';
 import { flattenArr, objToArr } from './utils/helper.js';
 import SimpleMDE from 'react-simplemde-editor';
 import uuidv4 from 'uuid/v4';
+import fileHelper from './utils/fileHelper.js'
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -14,8 +15,11 @@ import BottomBtn from './components/BottomBtn.js';
 import TabList from './components/TabList.js';
 import defaultFile from './utils/defaultFile.js';
 
-const fs = window.require('fs')
-console.log(fs)
+//require node.js modules
+const { join } = window.require('path')
+//remote made render process use app methods of main process
+const { remote } = window.require('electron')
+
 function App() {
   const [ files, setFiles ] = useState(flattenArr(defaultFile))
   const [ activeFileID, setActiveFileID ] = useState('')
@@ -23,6 +27,8 @@ function App() {
   const [ unsavedFileIDs, setUnsavedFileIDs ] = useState([])
   const [ searchedFile, setSearchedFile ] = useState([])
   const filesArr = objToArr(files)
+  //存储到本地的地址 documents文件夹中
+  const savedLocation = remote.app.getPath('documents') + '\\myStore'
 
   const activeFile = files[activeFileID]
   const fileListArr = searchedFile.length > 0 ? searchedFile : filesArr
@@ -53,12 +59,6 @@ function App() {
   }
   //右侧文件内容改变显示未保存状态并保存
   const fileChange = (id, newValue) => {
-    // const newFiles = files.map(file => {
-    //   if ( file.id === id ) {
-    //     file.body = newValue
-    //   }
-    //   return file
-    // })
     const newFile = { ...files[id], body: newValue }
     setFiles({ ...files, [id]: newFile })
     if (!unsavedFileIDs.includes(id)) {
@@ -69,20 +69,23 @@ function App() {
   const deleteFile = (id) => {
     delete files[id]
     setFiles(files)
-    //如果在打开时删除
+    //如果在打开 需要关闭这个tab
     tabClose(id)
   }
-  //点击编辑icon左侧文件名
-  const updateFileName = (id, value) => {
-    // const newFiles = files.map(file => {
-    //   if (file.id === id) {
-    //     file.title = value
-    //     file.isNew = false
-    //   }
-    //   return file
-    // }) 
-    const modifiedFile = { ...files[id], title: value, isNew: false }
-    setFiles({ ...files, [id]: modifiedFile })
+  //点击icon/新建文件时编辑文件名
+  const updateFileName = (id, title, isNew) => {
+    const modifiedFile = { ...files[id], title: title, isNew: false }
+    //新建文件的命名处理
+    if (isNew) {
+      fileHelper.writeFile(join(savedLocation, `${title}.md`), files[id].body).then(() => {
+        setFiles({ ...files, [id]: modifiedFile })
+      })
+    } else {
+      fileHelper.renameFile(join(savedLocation, `${files[id].title}.md`), join(savedLocation, `${title}.md`))
+        .then(() => {
+          setFiles({ ...files, [id]: modifiedFile })
+        })
+    }
   }
   //搜索显示对应文件
   const filesSearch = (keyword) => {
@@ -100,6 +103,14 @@ function App() {
       isNew: true
     }
     setFiles({ ...files, [newID]: newFile })
+  }
+
+  //当前文件保存
+  const saveCurrentFile = () => {
+    fileHelper.writeFile(join(savedLocation, `${activeFile.title}`), activeFile.body)
+      .then(() => {
+        setUnsavedFileIDs(unsavedFileIDs.filter(id => activeFile.id !== id))
+      })
   }
   return (
     <div className="App container-fluid px-0">
@@ -159,6 +170,14 @@ function App() {
                   minHeight: '475px'
                 }}
               />
+            <div className="col">
+              <BottomBtn 
+                text="保存"
+                colorClass="btn-primary"
+                icon={faSave}
+                onBtnClick={saveCurrentFile}
+              />
+            </div>
             </> 
           }         
         </div> 

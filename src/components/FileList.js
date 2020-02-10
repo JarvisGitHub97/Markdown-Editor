@@ -4,6 +4,9 @@ import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
 import PropTypes from 'prop-types'
 import useKeyPress from '../hooks/useKeyPress.js'
+import useContextMenu from '../hooks/useContextMenu.js'
+import { getParentNode } from '../utils/helper.js'
+
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [ editStatus, setEditStatus ] = useState(false)
@@ -20,6 +23,38 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       onFileDelete(editItem.id)
     }
   }
+  //添加上下文菜单
+ const clickedItem = useContextMenu([
+    {
+      label: '打开',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        if (parentElement) {
+          onFileClick(parentElement.dataset.id)
+        }
+      }
+    },
+    {
+      label: '删除',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        if (parentElement) {
+          onFileDelete(parentElement.dataset.id)
+        }
+      }
+    },
+    {
+      label: '重命名',
+      click: () => {
+        const parentElement = getParentNode(clickedItem.current, 'file-item')
+        if (parentElement) {
+          setEditStatus(parentElement.dataset.id);
+          setValue(parentElement.dataset.title)
+        }
+      }
+    }
+  ], '.file-list', [files])
+
   useEffect(() => {
     // const handleInputEvent = (event) => {
     //   const { keyCode } = event 
@@ -68,6 +103,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           <li 
             className="list-group-item bg-light d-flex align-items-center file-item row mx-0 px-1"
             key={file.id}
+            data-id={file.id}
+            data-title={file.title}
           >
             {
               ((file.id !== editStatus) && !file.isNew) && 
@@ -79,10 +116,10 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                   />
                 </span>
                 <span 
-                  className="col-6 c-link"
+                  className="col-10 c-link"
                   onClick={() => { onFileClick(file.id) }}
                 >{file.title}</span>
-                <button
+                {/* <button
                   type="button"
                   className="icon-button col-2" 
                   onClick={() => { setEditStatus(file.id); setValue(file.title)}}
@@ -103,7 +140,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                     title="删除"
                     size="lg"
                   />
-                </button>
+                </button> */}
               </>
             }
             {

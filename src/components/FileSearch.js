@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
 import PropTypes from 'prop-types'
 import useKeyPress from '../hooks/useKeyPress.js'
+import useIpcRenderer from '../hooks/useIpcRenderer.js'
 
 const FileSearch = ({ title, onFileSearch }) => {
   const [ inputActive, setInputActive ] = useState(false)
@@ -16,19 +17,10 @@ const FileSearch = ({ title, onFileSearch }) => {
     setValue('')
     onFileSearch('')
   }
+  const startSearch = () => {
+    setInputActive(true)
+  }
   useEffect(() => {
-    // const handleInputEvent = (event) => {
-    //   const { keyCode } = event 
-    //   if (keyCode === 13 && inputActive) {
-    //     onFileSearch(value)
-    //   } else if (keyCode === 27 && inputActive) {
-    //     closeSearch(event)
-    //   }
-    // }
-    // document.addEventListener('keyup', handleInputEvent)
-    // return () => {
-    //   document.removeEventListener('keyup', handleInputEvent)
-    // }
     if (enterPressed && inputActive) {
       onFileSearch(value)
     }
@@ -43,6 +35,9 @@ const FileSearch = ({ title, onFileSearch }) => {
     }
   }, [inputActive])
 
+  useIpcRenderer({
+    'search-file': startSearch 
+  })
   return (
     <div className="alert alert-primary d-flex justify-content-between align-items-center mb-0">
       {
@@ -52,7 +47,7 @@ const FileSearch = ({ title, onFileSearch }) => {
           <button
             type="button"
             className="icon-button" 
-            onClick={() => { setInputActive(true) }}
+            onClick={startSearch}
           >
             <FontAwesomeIcon 
               icon={faSearch} 

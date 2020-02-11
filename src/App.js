@@ -3,7 +3,8 @@ import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons'
 import { flattenArr, objToArr } from './utils/helper.js';
 import SimpleMDE from 'react-simplemde-editor';
 import uuidv4 from 'uuid/v4';
-import fileHelper from './utils/fileHelper.js'
+import fileHelper from './utils/fileHelper.js';
+import useIpcRenderer from './hooks/useIpcRenderer'
 
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -22,6 +23,7 @@ const Store = window.require('electron-store')
 
 const fileStore = new Store({ 'name': 'Files Data' })
 //electron-store 保存路径 %APPDATA% C:\Users\Administrator\AppData\Roaming\note-edit
+const settingsStore = new Store({ name: 'Settings' })
 
 const saveFilesToStore = (files) => {
   const filesStoreObj = objToArr(files).reduce((result, file) => {
@@ -45,7 +47,7 @@ function App() {
   const [ searchedFile, setSearchedFile ] = useState([])
   const filesArr = objToArr(files)
   //存储到本地的地址 documents文件夹中
-  const savedLocation = remote.app.getPath('documents') + '\\myStore'
+  const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents') + '\\myStore'
 
   const activeFile = files[activeFileID]
   const fileListArr = searchedFile.length > 0 ? searchedFile : filesArr
@@ -85,10 +87,12 @@ function App() {
   }
   //右侧文件内容改变显示未保存状态并保存
   const fileChange = (id, newValue) => {
-    const newFile = { ...files[id], body: newValue }
-    setFiles({ ...files, [id]: newFile })
-    if (!unsavedFileIDs.includes(id)) {
-      setUnsavedFileIDs([...unsavedFileIDs, id])
+    if (newValue !== files[id].body) {
+      const newFile = { ...files[id], body: newValue }
+      setFiles({ ...files, [id]: newFile })
+      if (!unsavedFileIDs.includes(id)) {
+        setUnsavedFileIDs([...unsavedFileIDs, id])
+      }
     }
   }
   //点击左侧icon删除
@@ -191,14 +195,10 @@ function App() {
       } 
     })
   }
-  useEffect(() => {
-    const callback = () => {
-      console.log('yo')
-    }
-    ipcRenderer.on('create-new-file', callback)
-    return () => {
-      ipcRenderer.removeListener('create-new-file', callback)
-    }
+  useIpcRenderer({
+    'create-new-file': createNewFile,
+    'import-file': importFiles,
+    'save-edit-file': saveCurrentFile
   })
   return (
     <div className="App container-fluid px-0">
@@ -258,14 +258,7 @@ function App() {
                   minHeight: '475px'
                 }}
               />
-            <div className="col">
-              <BottomBtn 
-                text="保存"
-                colorClass="btn-primary"
-                icon={faSave}
-                onBtnClick={saveCurrentFile}
-              />
-            </div>
+
             </> 
           }         
         </div> 

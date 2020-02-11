@@ -95,7 +95,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       setValue(newFile.title)
     } 
   }, [files])
-  
+
   return (
     <ul className="list-group list-group-flush file-list">
       {

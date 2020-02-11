@@ -8,11 +8,10 @@
 }
 .left-panel {
   min-height: 100vh;
-  position: relative;
 }
 .button-group {
-  position: absolute;
-  width: 100%;
+  position: fixed;
+  width: 25vw;
   bottom: 0;
 }
 .no-border {

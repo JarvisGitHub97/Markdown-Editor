@@ -1,4 +1,4 @@
-const { app, shell } = require('electron')
+const { app, shell, ipcMain } = require('electron')
 
 let template = [{
   label: '文件',
@@ -153,5 +153,58 @@ let template = [{
   ]
 },
 ]
+
+//判断平台
+if (process.platform === 'darwin') {
+  const name = app.getName()
+  template.unshift({
+    label: name,
+    submenu: [{
+      label: `关于 ${name}`,
+      role: 'about'
+    }, {
+      type: 'separator'
+    }, {
+      label: '设置',
+      accelerator: 'Command+,',
+      click: () => {
+        ipcMain.emit('open-settings-window')
+      }
+    }, {
+      label: '服务',
+      role: 'services',
+      submenu: []
+    }, {
+      type: 'separator'
+    }, {
+      label: `隐藏 ${name}`,
+      accelerator: 'Command+H',
+      role: 'hide'
+    }, {
+      label: '隐藏其它',
+      accelerator: 'Command+Alt+H',
+      role: 'hideothers'
+    }, {
+      label: '显示全部',
+      role: 'unhide'
+    }, {
+      type: 'separator'
+    }, {
+      label: '退出',
+      accelerator: 'Command+Q',
+      click: () => {
+        app.quit()
+      }
+    }]
+  })
+} else {
+  template[0].submenu.push({
+    label: '设置',
+    accelerator: 'Ctrl+,',
+    click: () => {
+      ipcMain.emit('open-settings-window')
+    }
+  })
+}
 
 module.exports = template

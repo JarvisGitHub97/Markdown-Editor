@@ -56,21 +56,6 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   ], '.file-list', [files])
 
   useEffect(() => {
-    // const handleInputEvent = (event) => {
-    //   const { keyCode } = event 
-    //   if (keyCode === 13 && editStatus) {
-    //     const editItem = files.find(file => file.id === editStatus)
-    //     onSaveEdit(editItem.id, value)
-    //     setEditStatus(false)
-    //     setValue('')
-    //   } else if (keyCode === 27 && editStatus) {
-    //     closeEdit(event)
-    //   }
-    // }
-    // document.addEventListener('keyup', handleInputEvent)
-    // return () => {
-    //   document.removeEventListener('keyup', handleInputEvent)
-    // }
     const editItem = files.find(file => file.id === editStatus)
     if (enterPressed && editStatus && value.trim() !== '') {
         onSaveEdit(editItem.id, value, editItem.isNew)
@@ -119,28 +104,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                   className="col-10 c-link"
                   onClick={() => { onFileClick(file.id) }}
                 >{file.title}</span>
-                {/* <button
-                  type="button"
-                  className="icon-button col-2" 
-                  onClick={() => { setEditStatus(file.id); setValue(file.title)}}
-                >
-                  <FontAwesomeIcon 
-                    icon={faEdit} 
-                    title="编辑"
-                    size="lg"
-                  />
-                </button>
-                <button
-                  type="button"
-                  className="icon-button col-2" 
-                  onClick={() => { onFileDelete(file.id) }}
-                >
-                  <FontAwesomeIcon 
-                    icon={faTrash} 
-                    title="删除"
-                    size="lg"
-                  />
-                </button> */}
+
               </>
             }
             {

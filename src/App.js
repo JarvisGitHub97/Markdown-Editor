@@ -146,7 +146,9 @@ function App() {
       createdAt: new Date().getTime(),
       isNew: true
     }
+    let stateTest = { ...files, [newID]: newFile }
     setFiles({ ...files, [newID]: newFile })
+    console.log(stateTest)
   }
 
   //当前文件保存

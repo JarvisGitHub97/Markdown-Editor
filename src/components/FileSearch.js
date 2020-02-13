@@ -15,7 +15,7 @@ const FileSearch = ({ title, onFileSearch }) => {
   const closeSearch = () => {
     setInputActive(false)
     setValue('')
-    onFileSearch('')
+    onFileSearch(false)
   }
   const startSearch = () => {
     setInputActive(true)
@@ -51,7 +51,7 @@ const FileSearch = ({ title, onFileSearch }) => {
           >
             <FontAwesomeIcon 
               icon={faSearch} 
-              title="搜索"
+              title="杜索"
               size="lg"
             />
           </button>

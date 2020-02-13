@@ -66,12 +66,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       closeEdit(editItem)
     }
   })
-  //editAutofocus
-  useEffect(() => {
-    if (editStatus) {
-      node.current.focus()
-    }
-  }, [editStatus])
+
   //新建文件改变编辑状态和值
   useEffect(() => {
     const newFile = files.find(file => file.isNew)
@@ -81,6 +76,13 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     } 
   }, [files])
 
+  //editAutofocus
+  useEffect(() => {
+    if (editStatus) {
+      node.current.focus()
+    }
+  }, [editStatus])
+  
   return (
     <ul className="list-group list-group-flush file-list">
       {

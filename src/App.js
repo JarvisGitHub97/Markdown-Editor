@@ -133,7 +133,12 @@ function App() {
   }
   //搜索显示对应文件
   const filesSearch = (keyword) => {
-    const newFiles = filesArr.filter(file => file.title.includes(keyword))
+    const newFiles = filesArr.filter(file => {
+      //fixed at 2020/2/13
+      if (keyword === false) return false
+      return file.title.includes(keyword)
+    })
+
     setSearchedFile(newFiles)
   }
   //创建文件
@@ -146,9 +151,7 @@ function App() {
       createdAt: new Date().getTime(),
       isNew: true
     }
-    let stateTest = { ...files, [newID]: newFile }
     setFiles({ ...files, [newID]: newFile })
-    console.log(stateTest)
   }
 
   //当前文件保存

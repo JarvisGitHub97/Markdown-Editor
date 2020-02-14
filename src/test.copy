@@ -1,12 +1,10 @@
 const qiniu = require('qiniu')
-const path =require('path')
 const QiniuManager = require('./utils/qiniuManager.js')
 //鉴权对象
 var accessKey = 'UzkilnXmJFQFF86NtUYoZWKdIPxaBMjVGFVpBPwI';
 var secretKey = 'yXHB8ydepVcLGI_APzXiN50jwTgxVwR6Ck1baTuw';
 var localFile = '/Documents/myStore/shadowsocks.md';
-var key='muhah.md';
-const downloadPath = path.join(__dirname, key)
+var key='shadowsocks.md';
 
 
 const manager = new QiniuManager(accessKey, secretKey, 'noteedit')
@@ -23,13 +21,9 @@ const manager = new QiniuManager(accessKey, secretKey, 'noteedit')
 //   console.log(data)
 // })
 
-// manager.generatedDownloadLink(key).then(data => {
-//   console.log(data)
-//   return manager.generatedDownloadLink('muhah.md')
-// }).then(data => {
-//   console.log(data)
-// })
-
-manager.downloadFile(key, downloadPath).then(() => {
-  console.log('success download')
+manager.generatedDownloadLink(key).then(data => {
+  console.log(data)
+  return manager.generatedDownloadLink('muhah.md')
+}).then(data => {
+  console.log(data)
 })

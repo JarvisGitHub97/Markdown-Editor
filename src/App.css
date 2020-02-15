@@ -24,3 +24,16 @@
   line-height: 450px;
   text-align: center;
 }
+.right-panel {
+  position: relative;
+}
+.sync-status {
+  font-size: 12px;
+  position: absolute;
+  left: 15px;
+  bottom: 10px;
+  color: #ccc;
+}
+.CodeMirror-scroll {
+  height: 600px !important
+}

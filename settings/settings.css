@@ -1,0 +1,9 @@
+.configColor {
+  color: #17A2B8
+}
+.nav-link:hover {
+  color: #20c997
+}
+#qiniu-sync-params {
+  display: none;
+}

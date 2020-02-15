@@ -1,9 +1,20 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron')
+const { app, Menu, ipcMain, dialog } = require('electron')
 const isDev = require('electron-is-dev')
 const menuTemplate = require('./src/menuTemplate.js')
 const AppWindow = require('./src/AppWindow')
-const path = require('path') 
+const path = require('path')
+const Store = require('electron-store')
+const QiniuManager = require('./src/utils/qiniuManager.js')
+const settingsStore = new Store({ name: 'Settings' })
 let mainWindow, settingsWindow
+
+//实例化一个管理云操作的对象
+const createManager = () => {
+  const accessKey = settingsStore.get('accessKey')
+  const secretKey = settingsStore.get('secretKey')
+  const bucketName = settingsStore.get('bucketName')
+  return new QiniuManager(accessKey, secretKey, bucketName)
+}
 
 app.on('ready', () => {
   const mainWindowConfig = {
@@ -17,20 +28,45 @@ app.on('ready', () => {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+  //设置原生菜单
+  let menu = Menu.buildFromTemplate(menuTemplate)
+  Menu.setApplicationMenu(menu)  
   //hook up main events
   ipcMain.on('open-settings-window', () => {
     const settingsWindowConfig = {
-      width: 500,
-      height: 400,
+      width: 600,
+      height: 500,
       parent: mainWindow
     }
     const settingsFileLocation = `file://${path.join(__dirname, './settings/settings.html')}`
     settingsWindow = new AppWindow(settingsWindowConfig, settingsFileLocation)
+    settingsWindow.removeMenu()
     settingsWindow.on('closed', () => {
       settingsWindow = null
     })
   })
-  //设置原生菜单
-  const menu = Menu.buildFromTemplate(menuTemplate)
-  Menu.setApplicationMenu(menu)
+  ipcMain.on('config-is-saved', () => {
+    //注意mac和windows的菜单项个数不同
+    let qiniuMenu = process.platform === 'darwin' ? menu.items[3] : menu.items[2]
+    const switchItems = (toggle) => {
+      [1, 2, 3].forEach(number => {
+        qiniuMenu.submenu.items[number].enabled = toggle
+      })
+    }
+    const qiniuIsConfiged =  ['accessKey', 'secretKey', 'bucketName'].every(key => !!settingsStore.get(key)) 
+    if (qiniuIsConfiged) {
+      switchItems(true)
+    } else {
+      switchItems(false)
+    }
+  })
+  ipcMain.on('upload-file', (event, data) => {
+    const manager = createManager()
+    manager.upLoadFile(data.key, data.path).then((data) => {
+      console.log('上传成功', data)
+      mainWindow.webContents.send('active-file-uploaded')
+    }).catch(() => {
+      dialog.showErrorBox('上传失败', '请检查七牛云同步参数是否正确')
+    })
+  })
 })

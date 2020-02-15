@@ -1,6 +1,6 @@
 import React, { useState, useEffect }from 'react';
 import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons';
-import { flattenArr, objToArr } from './utils/helper.js';
+import { flattenArr, objToArr, timestampToString } from './utils/helper.js';
 import SimpleMDE from 'react-simplemde-editor';
 import uuidv4 from 'uuid/v4';
 import fileHelper from './utils/fileHelper.js';
@@ -24,15 +24,19 @@ const Store = window.require('electron-store')
 const fileStore = new Store({ 'name': 'Files Data' })
 //electron-store 保存路径 %APPDATA% C:\Users\Administrator\AppData\Roaming\note-edit
 const settingsStore = new Store({ name: 'Settings' })
+//判断是否有权限自动上传文件
+const getAutoSync = () => ['accessKey', 'secretKey', 'bucketName', 'enableAutoSync'].every(key => !!settingsStore.get(key))
 
 const saveFilesToStore = (files) => {
   const filesStoreObj = objToArr(files).reduce((result, file) => {
-    const { id, path, title, createdAt } = file
+    const { id, path, title, createdAt, isSynced, updatedAt } = file
     result[id] = {
       id,
       path,
       title,
-      createdAt
+      createdAt,
+      isSynced,
+      updatedAt
     }
     return result
   }, {})
@@ -156,9 +160,14 @@ function App() {
 
   //当前文件保存
   const saveCurrentFile = () => {
-    fileHelper.writeFile(activeFile.path, activeFile.body)
+    const { path, body, title } = activeFile
+    fileHelper.writeFile(path, body)
       .then(() => {
         setUnsavedFileIDs(unsavedFileIDs.filter(id => activeFile.id !== id))
+        //权限符合时保存文件便可进行同步
+        if (getAutoSync()) {
+          ipcRenderer.send('upload-file', { key: `${title}.md`, path })
+        }
       })
   }
   //导入文件
@@ -200,10 +209,21 @@ function App() {
       } 
     })
   }
+  //更新本地的store
+  const activeFileUploaded = () => {
+    const { id } = activeFile
+    const modifiedFile = { ...files[id], isSynced: true, updatedAt: new Date().getTime() }
+    console.log(modifiedFile)
+    const newFiles = { ...files, [id]: modifiedFile }
+    setFiles(newFiles)
+    saveFilesToStore(newFiles)
+  }
+
   useIpcRenderer({
     'create-new-file': createNewFile,
     'import-file': importFiles,
-    'save-edit-file': saveCurrentFile
+    'save-edit-file': saveCurrentFile,
+    'active-file-uploaded': activeFileUploaded
   })
   return (
     <div className="App container-fluid px-0">
@@ -260,10 +280,14 @@ function App() {
                 value={activeFile && activeFile.body}
                 onChange={(value) => {fileChange(activeFileID, value)}}
                 options={{
-                  minHeight: '475px'
+                  minHeight: '550px'
                 }}
               />
-
+              { activeFile.isSynced &&
+                <span className="sync-status">
+                  已同步，上次同步时间{timestampToString(activeFile.updatedAt)}
+                </span>
+              }
             </> 
           }         
         </div> 

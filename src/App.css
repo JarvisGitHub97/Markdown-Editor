@@ -20,8 +20,8 @@
 .start-page {
   font-size: 30px;
   color: #ccc;
-  height: 450px;
-  line-height: 450px;
+  height: 600px;
+  line-height: 600px;
   text-align: center;
 }
 .right-panel {
@@ -32,8 +32,8 @@
   position: absolute;
   left: 15px;
   bottom: 10px;
-  color: #ccc;
+  color: #666;
 }
 .CodeMirror-scroll {
-  height: 600px !important
+  height: 630px !important
 }

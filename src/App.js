@@ -14,6 +14,7 @@ import FileSearch from './components/FileSearch.js';
 import FileList from './components/FileList.js';
 import BottomBtn from './components/BottomBtn.js';
 import TabList from './components/TabList.js';
+import Loader from './components/Loader.js'
 
 //require node.js modules
 const { join, basename, extname, dirname } = window.require('path')
@@ -49,9 +50,11 @@ function App() {
   const [ openedFileIDs, setOpenedFileIDs ] = useState([])
   const [ unsavedFileIDs, setUnsavedFileIDs ] = useState([])
   const [ searchedFile, setSearchedFile ] = useState([])
+  const [ isLoading, setLoading ] = useState(false)
   const filesArr = objToArr(files)
   //存储到本地的地址 documents文件夹中
   const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents') + '\\myStore'
+  
 
   const activeFile = files[activeFileID]
   const fileListArr = searchedFile.length > 0 ? searchedFile : filesArr
@@ -64,12 +67,21 @@ function App() {
     //设置当前的激活状态的文件
     setActiveFileID(fileID)
     const currentFile = files[fileID]
-    if (!currentFile.isLoaded) {
-      fileHelper.readFile(currentFile.path).then(value => {
-        const newFile = { ...files[fileID], body: value, isLoaded: true }
-        setFiles({ ...files, [fileID]: newFile })
-      })
-    }
+    const { id, title, path, isLoaded } = currentFile
+    if (!isLoaded) {
+      console.log(0)
+      //如果自动同步模式开启且有权限则进行云端文件的下载更新，否则文件直接从本地获取打开
+      if (getAutoSync()) {
+        console.log(1)
+        ipcRenderer.send('download-file', { key: `${title}.md`, id, path })
+      } else {
+        console.log(3)
+        fileHelper.readFile(currentFile.path).then(value => {
+          const newFile = { ...files[fileID], body: value, isLoaded: true }
+          setFiles({ ...files, [fileID]: newFile })
+        })
+      }
+    } 
     //如果打开数组总包含当前点击的则不添加
     if (!openedFileIDs.includes(fileID)) {
       setOpenedFileIDs([...openedFileIDs, fileID])
@@ -209,24 +221,63 @@ function App() {
       } 
     })
   }
-  //更新本地的store
+  //单文件上传成功则更新本地的store中的数据
   const activeFileUploaded = () => {
     const { id } = activeFile
     const modifiedFile = { ...files[id], isSynced: true, updatedAt: new Date().getTime() }
-    console.log(modifiedFile)
     const newFiles = { ...files, [id]: modifiedFile }
     setFiles(newFiles)
     saveFilesToStore(newFiles)
   }
-
+  //单文件下载成功，数据展示 并且更新到本地store中
+  const activeFileDownloaded = (event, msg) => {
+    const currentFile = files[msg.id]
+    const { id, path } = currentFile
+    fileHelper.readFile(path).then(value => {
+      let newFile
+      if (msg.status === 'download-success') {
+        newFile = { ...files[id], body: value, isLoaded: true, isSynced: true, updatedAt: new Date().getTime()}
+      } else {
+        newFile = { ...files[id], body: value, isLoaded: true }
+      }
+      const newFiles = { ...files, [id]: newFile }
+      setFiles(newFiles)
+      saveFilesToStore(newFiles)
+    })
+  }
+  //全部同步时loading
+  const loadingStatus = (msg, status) => {
+    setLoading(status)
+  }
+  //全部上传完毕时更新本地文件数据
+  const allFilesUploaded = () => {
+    const newFiles = objToArr(files).reduce((result, file) => {
+      const currentTime = new Date().getTime()
+      result[file.id] = {
+        ...files[file.id],
+        isSynced: true,
+        updatedAt: currentTime
+      }
+      return result
+    }, {})
+    setFiles(newFiles)
+    saveFilesToStore(newFiles)
+  }
+  //渲染进程监听
   useIpcRenderer({
     'create-new-file': createNewFile,
     'import-file': importFiles,
     'save-edit-file': saveCurrentFile,
-    'active-file-uploaded': activeFileUploaded
+    'active-file-uploaded': activeFileUploaded,
+    'active-file-downloaded': activeFileDownloaded,
+    'loading-status': loadingStatus,
+    'all-files-uploaded': allFilesUploaded
   })
   return (
     <div className="App container-fluid px-0">
+      {isLoading &&
+        <Loader />
+      }
       <div className="row no-gutters">
         <div className="col-3 bg-light left-panel">
           <FileSearch 
@@ -280,12 +331,12 @@ function App() {
                 value={activeFile && activeFile.body}
                 onChange={(value) => {fileChange(activeFileID, value)}}
                 options={{
-                  minHeight: '550px'
+                  minHeight: '515px'
                 }}
               />
               { activeFile.isSynced &&
                 <span className="sync-status">
-                  已同步，上次同步时间{timestampToString(activeFile.updatedAt)}
+                  已同步，上次时间 :  {timestampToString(activeFile.updatedAt)}
                 </span>
               }
             </> 

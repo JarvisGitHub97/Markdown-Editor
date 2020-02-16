@@ -6,6 +6,7 @@ const path = require('path')
 const Store = require('electron-store')
 const QiniuManager = require('./src/utils/qiniuManager.js')
 const settingsStore = new Store({ name: 'Settings' })
+const fileStore = new Store({ name: 'Files Data' })
 let mainWindow, settingsWindow
 
 //实例化一个管理云操作的对象
@@ -60,6 +61,7 @@ app.on('ready', () => {
       switchItems(false)
     }
   })
+  //上传
   ipcMain.on('upload-file', (event, data) => {
     const manager = createManager()
     manager.upLoadFile(data.key, data.path).then((data) => {
@@ -67,6 +69,57 @@ app.on('ready', () => {
       mainWindow.webContents.send('active-file-uploaded')
     }).catch(() => {
       dialog.showErrorBox('上传失败', '请检查七牛云同步参数是否正确')
+    })
+  })
+  //下载
+  ipcMain.on('download-file', (event, data) => {
+    const manager = createManager()
+    const filesObj = fileStore.get('files')
+    const { key, id, path } = data 
+    //获取云端指定文件信息
+    manager.getStat(data.key).then((res) => {
+      const serverUpdatedTime = Math.round(res.putTime/10000)
+      const localUpdatedTime = filesObj[id].updatedAt 
+      //同名文件在其他终端上传过或者该文件没有上传过云端
+      if (serverUpdatedTime > localUpdatedTime || !localUpdatedTime) {
+        console.log('new file downloaded')
+        manager.downloadFile(key, path).then(() => {
+          mainWindow.webContents.send('active-file-downloaded', { status: 'download-success', id })
+        })
+      } else {
+        console.log('no new file')
+        mainWindow.webContents.send('active-file-downloaded', { status: 'no-new-file', id })
+      }
+    }, (err) => {
+      console.log(err)
+      if (err.statusCode === 612) {
+        mainWindow.webContents.send('active-file-downloaded', { status: 'no-file', id })
+      }
+    })
+  })
+  //全部同步到云端
+  ipcMain.on('upload-all-to-qiniu', () => {
+    mainWindow.webContents.send('loading-status', true)
+    const manager = createManager()
+    const filesObj = fileStore.get('files') || {}
+    const uploadPromiseArr = Object.keys(filesObj).map(key => {
+      const file = filesObj[key]
+      return manager.upLoadFile(`${file.title}.md`, file.path)
+    })
+    Promise.all(uploadPromiseArr).then((result) => {
+      console.log(result)
+      dialog.showMessageBox({
+        type: 'info',
+        title: '上传成功',
+        message: `已成功上传了 ${result.length} 个文件到云端`
+      })
+      mainWindow.webContents.send('all-files-uploaded')
+    }).catch(() => {
+      dialog.showErrorBox('上传失败', '请检查七牛云同步参数是否正确')
+    }).finally(() => {
+      setTimeout(() => {
+        mainWindow.webContents.send('loading-status', false)
+      }, 5000)
     })
   })
 })

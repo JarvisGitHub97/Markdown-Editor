@@ -1,5 +1,5 @@
 import React, { useState, useEffect }from 'react';
-import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons';
 import { flattenArr, objToArr, timestampToString } from './utils/helper.js';
 import SimpleMDE from 'react-simplemde-editor';
 import uuidv4 from 'uuid/v4';
@@ -52,8 +52,8 @@ function App() {
   const [ searchedFile, setSearchedFile ] = useState([])
   const [ isLoading, setLoading ] = useState(false)
   const filesArr = objToArr(files)
-  //存储到本地的地址 documents文件夹中
-  const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents') + '\\myStore'
+  //存储到本地自定义的的地址 ， 未选择则是documents文件夹
+  const savedLocation = settingsStore.get('saved-file-location') || remote.app.getPath('documents') + '\\myStore'
   
 
   const activeFile = files[activeFileID]
@@ -100,6 +100,11 @@ function App() {
     } else {
       setActiveFileID('')
     }
+    // trigger tabClose isLoaded should be false but the fileList can't refresh
+    // const newFile = { ...files[fileID], isLoaded: false }
+    // const newFiles = { ...files, [fileID]: newFile }
+    // setFiles(newFiles)
+    // saveFilesToStore(newFiles)
   }
   //右侧文件内容改变显示未保存状态并保存
   const fileChange = (id, newValue) => {
@@ -125,7 +130,15 @@ function App() {
         //如果文件是打开的 需要关闭这个tab
         tabClose(id)
       })
+      console.log(objToArr(files).length)
     }
+    //删除功能同步到云端
+    // const { title } = files[id]
+    // if (getAutoSync()) {
+    //   console.log('delete sync')
+    //   ipcRenderer.send('delete-file', { key: `${title}.md` })
+    // } 
+
   }
   //点击icon/新建文件时编辑文件名
   const updateFileName = (id, title, isNew) => {

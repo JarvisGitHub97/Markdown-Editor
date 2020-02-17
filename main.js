@@ -46,11 +46,12 @@ app.on('ready', () => {
       settingsWindow = null
     })
   })
+  //设置配置
   ipcMain.on('config-is-saved', () => {
     //注意mac和windows的菜单项个数不同
     let qiniuMenu = process.platform === 'darwin' ? menu.items[3] : menu.items[2]
     const switchItems = (toggle) => {
-      [1, 2, 3].forEach(number => {
+      [1, 2].forEach(number => {
         qiniuMenu.submenu.items[number].enabled = toggle
       })
     }
@@ -77,7 +78,8 @@ app.on('ready', () => {
     const filesObj = fileStore.get('files')
     const { key, id, path } = data 
     //获取云端指定文件信息
-    manager.getStat(data.key).then((res) => {
+    manager.getStat(key).then((res) => {
+      console.log('trigger only at first open')
       const serverUpdatedTime = Math.round(res.putTime/10000)
       const localUpdatedTime = filesObj[id].updatedAt 
       //同名文件在其他终端上传过或者该文件没有上传过云端
@@ -97,6 +99,20 @@ app.on('ready', () => {
       }
     })
   })
+
+  //删除同步
+  // ipcMain.on('delete-file', (event, data) => {
+  //   const manager = createManager()
+  //   const { key } = data
+  //   manager.getStat(key).then((res) => {
+  //     manager.deleteFile(key).then(() => {
+  //       console.log(`cloud file ${key}.md delete success`)
+  //     }, () => {
+  //       dialog.showErrorBox('云端文件删除失败', '云端没有此文件！')
+  //     })
+  //   })
+  // })
+
   //全部同步到云端
   ipcMain.on('upload-all-to-qiniu', () => {
     mainWindow.webContents.send('loading-status', true)

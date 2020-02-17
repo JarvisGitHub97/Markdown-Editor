@@ -87,12 +87,6 @@ let template = [{
     click: () => {
       ipcMain.emit('upload-all-to-qiniu')
     }
-  }, {
-    label: '从云端下载到本地',
-    enabled: qiniuIsConfiged,
-    click: () => {
-      
-    }
   }]
 },
 {
@@ -153,7 +147,7 @@ let template = [{
   submenu: [
     {
       label: '学习更多',
-      click: () => { shell.openExternal('http://electron.atom.io') }
+      click: () => { shell.openExternal('https://zh-hans.reactjs.org/') }
     },
   ]
 },

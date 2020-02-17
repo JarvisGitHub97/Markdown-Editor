@@ -9,7 +9,7 @@ const $ = (selector) => {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  let savedLocation =  settingsStore.get('savedFileLocation')
+  let savedLocation =  settingsStore.get('saved-file-location')
   if (savedLocation) {
     $('#saved-file-location').value = savedLocation
   }
@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, (path) => {
       if (Array.isArray(path)) {
         $('#saved-file-location').value = path[0]
+
       }
     })
   })
